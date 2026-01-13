@@ -276,14 +276,30 @@ Private Function ProcessEmailRow(outlookApp As Object, htmlTemplate As String, _
             End If
         End If
 
+        stepName = "Resolving recipients"
+        ' Resolve recipients to validate email addresses
+        If Not .Recipients.ResolveAll Then
+            ' If resolution fails, still try to send (external addresses may not resolve)
+        End If
+
         stepName = "Sending/displaying email"
         ' Send or display based on mode
         If sendMode = vbYes Then
             .Display
             LogStatus ws, rowNum, statusColIndex, "Previewed: " & Format(Now, "yyyy-mm-dd hh:mm:ss")
         Else
+            ' Try to send, fall back to display if blocked by security
+            On Error Resume Next
             .Send
-            LogStatus ws, rowNum, statusColIndex, "Sent: " & Format(Now, "yyyy-mm-dd hh:mm:ss")
+            If Err.Number <> 0 Then
+                Err.Clear
+                On Error GoTo RowError
+                .Display
+                LogStatus ws, rowNum, statusColIndex, "Displayed (auto-send blocked): " & Format(Now, "yyyy-mm-dd hh:mm:ss")
+            Else
+                On Error GoTo RowError
+                LogStatus ws, rowNum, statusColIndex, "Sent: " & Format(Now, "yyyy-mm-dd hh:mm:ss")
+            End If
         End If
     End With
 
