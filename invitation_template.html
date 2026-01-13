@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Screening Invitation</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.6; color: #333333; background-color: #f4f4f4;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f4f4f4;">
+        <tr>
+            <td align="center" style="padding: 20px 10px;">
+                <!-- Email Container -->
+                <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td style="background-color: #0066cc; padding: 30px 40px; border-radius: 8px 8px 0 0;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: bold;">
+                                Health Screening Invitation
+                            </h1>
+                        </td>
+                    </tr>
+
+                    <!-- Body Content -->
+                    <tr>
+                        <td style="padding: 40px;">
+                            <p style="margin: 0 0 20px 0;">
+                                Dear {{Title}} {{Surname}},
+                            </p>
+
+                            <p style="margin: 0 0 20px 0;">
+                                We are pleased to inform you that <strong>{{Company}}</strong> has arranged for you to receive a complimentary <strong>{{Screen_Type}}</strong> as part of their employee health and wellbeing programme.
+                            </p>
+
+                            <p style="margin: 0 0 20px 0;">
+                                This screening is designed to help you understand your current health status and identify any areas where you might benefit from lifestyle changes or further medical advice.
+                            </p>
+
+                            <!-- Invitation Code Box -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin: 30px 0;">
+                                <tr>
+                                    <td style="background-color: #f0f7ff; border: 2px solid #0066cc; border-radius: 8px; padding: 20px; text-align: center;">
+                                        <p style="margin: 0 0 10px 0; font-size: 14px; color: #666666;">
+                                            Your Personal Invitation Code:
+                                        </p>
+                                        <p style="margin: 0; font-size: 28px; font-weight: bold; color: #0066cc; letter-spacing: 2px;">
+                                            {{Invitation_Code}}
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <h2 style="margin: 30px 0 15px 0; font-size: 18px; color: #0066cc;">
+                                How to Book Your Appointment
+                            </h2>
+
+                            <ol style="margin: 0 0 20px 0; padding-left: 20px;">
+                                <li style="margin-bottom: 10px;">Visit our online booking portal</li>
+                                <li style="margin-bottom: 10px;">Enter your invitation code shown above</li>
+                                <li style="margin-bottom: 10px;">Select a convenient date, time, and location</li>
+                                <li style="margin-bottom: 10px;">Complete the pre-screening questionnaire</li>
+                            </ol>
+
+                            <h2 style="margin: 30px 0 15px 0; font-size: 18px; color: #0066cc;">
+                                What to Expect
+                            </h2>
+
+                            <p style="margin: 0 0 20px 0;">
+                                Your {{Screen_Type}} will take approximately 30-45 minutes and includes:
+                            </p>
+
+                            <ul style="margin: 0 0 20px 0; padding-left: 20px;">
+                                <li style="margin-bottom: 8px;">Health history review</li>
+                                <li style="margin-bottom: 8px;">Biometric measurements (height, weight, blood pressure)</li>
+                                <li style="margin-bottom: 8px;">Blood tests (cholesterol, glucose levels)</li>
+                                <li style="margin-bottom: 8px;">Lifestyle assessment</li>
+                                <li style="margin-bottom: 8px;">Personalised health report and recommendations</li>
+                            </ul>
+
+                            <h2 style="margin: 30px 0 15px 0; font-size: 18px; color: #0066cc;">
+                                Preparing for Your Screening
+                            </h2>
+
+                            <ul style="margin: 0 0 20px 0; padding-left: 20px;">
+                                <li style="margin-bottom: 8px;">Fast for 8-12 hours before your appointment (water is permitted)</li>
+                                <li style="margin-bottom: 8px;">Wear comfortable clothing with sleeves that can be rolled up</li>
+                                <li style="margin-bottom: 8px;">Bring a list of any medications you are currently taking</li>
+                                <li style="margin-bottom: 8px;">Bring your invitation code and photo ID</li>
+                            </ul>
+
+                            <p style="margin: 30px 0 20px 0;">
+                                If you have any questions or need assistance with booking, please don't hesitate to contact our support team.
+                            </p>
+
+                            <p style="margin: 0;">
+                                We look forward to seeing you soon.
+                            </p>
+
+                            <p style="margin: 30px 0 0 0;">
+                                Kind regards,<br>
+                                <strong>The Health Screening Team</strong>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f8f8f8; padding: 20px 40px; border-radius: 0 0 8px 8px; border-top: 1px solid #e0e0e0;">
+                            <p style="margin: 0 0 10px 0; font-size: 12px; color: #666666;">
+                                This invitation was sent to {{First_Name}} {{Surname}} at the request of {{Company}}.
+                            </p>
+                            <p style="margin: 0; font-size: 12px; color: #999999;">
+                                Please do not reply to this email. For enquiries, contact your HR department or our booking support line.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

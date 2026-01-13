@@ -1,0 +1,11 @@
+To,Subject,CC,BCC,SendAs,Importance,Title,First Name,Surname,Company,Screen Type,Invitation Code,Attachment1,Attachment2,Status
+john.smith@example.com,Your Health Screening Invitation from Acme Corp,,hr@acme.com,healthscreenings@provider.com,Normal,Mr,John,Smith,Acme Corporation,Executive Health Assessment,ACME-2026-001,,,
+jane.doe@example.com,Your Health Screening Invitation from Acme Corp,,hr@acme.com,healthscreenings@provider.com,Normal,Ms,Jane,Doe,Acme Corporation,Standard Health Check,ACME-2026-002,,,
+robert.jones@example.com,Your Health Screening Invitation from Acme Corp,,hr@acme.com,healthscreenings@provider.com,High,Dr,Robert,Jones,Acme Corporation,Executive Health Assessment,ACME-2026-003,,,
+maria.garcia@example.com,Your Health Screening Invitation from Globex Inc,,wellness@globex.com,healthscreenings@provider.com,Normal,Mrs,Maria,Garcia,Globex Industries,Comprehensive Health Screen,GLOB-2026-001,,,
+david.wilson@example.com,Your Health Screening Invitation from Globex Inc,,wellness@globex.com,healthscreenings@provider.com,Normal,Mr,David,Wilson,Globex Industries,Standard Health Check,GLOB-2026-002,,,
+emily.brown@example.com,Your Health Screening Invitation from Initech,,hr@initech.com,healthscreenings@provider.com,Normal,Ms,Emily,Brown,Initech Solutions,Executive Health Assessment,INIT-2026-001,,,
+michael.taylor@example.com,Your Health Screening Invitation from Initech,,hr@initech.com,healthscreenings@provider.com,Normal,Mr,Michael,Taylor,Initech Solutions,Standard Health Check,INIT-2026-002,,,
+sarah.anderson@example.com,Your Health Screening Invitation from Umbrella Corp,,hr@umbrella.com,healthscreenings@provider.com,Normal,Dr,Sarah,Anderson,Umbrella Corporation,Comprehensive Health Screen,UMBR-2026-001,,,
+james.martinez@example.com,Your Health Screening Invitation from Umbrella Corp,,hr@umbrella.com,healthscreenings@provider.com,Normal,Mr,James,Martinez,Umbrella Corporation,Standard Health Check,UMBR-2026-002,,,
+lisa.thomas@example.com,Your Health Screening Invitation from Umbrella Corp,,hr@umbrella.com,healthscreenings@provider.com,Normal,Mrs,Lisa,Thomas,Umbrella Corporation,Executive Health Assessment,UMBR-2026-003,,,
