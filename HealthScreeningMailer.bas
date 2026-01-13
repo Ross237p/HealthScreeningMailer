@@ -13,6 +13,21 @@ Private Const olImportanceHigh As Integer = 2
 Private Const olImportanceNormal As Integer = 1
 Private Const olImportanceLow As Integer = 0
 
+' CDO Configuration constants
+Private Const cdoSendUsingPickup As Integer = 1
+Private Const cdoSendUsingPort As Integer = 2
+Private Const cdoAnonymous As Integer = 0
+Private Const cdoBasic As Integer = 1
+Private Const cdoNTLM As Integer = 2
+
+' Module-level SMTP settings
+Private m_SmtpServer As String
+Private m_SmtpPort As Integer
+Private m_SmtpUser As String
+Private m_SmtpPass As String
+Private m_FromAddress As String
+Private m_UseCDO As Boolean
+
 '=============================================================================
 ' Main Entry Point
 '=============================================================================
@@ -94,6 +109,28 @@ Public Sub SendHealthScreeningInvites()
         Exit Sub
     End If
 
+    ' Prompt for sending method
+    Dim methodChoice As VbMsgBoxResult
+    methodChoice = MsgBox("Which sending method would you like to use?" & vbCrLf & vbCrLf & _
+                          "YES = Outlook (may be blocked by security)" & vbCrLf & _
+                          "NO = SMTP Direct (bypasses Outlook security)" & vbCrLf & _
+                          "CANCEL = Abort operation", _
+                          vbYesNoCancel + vbQuestion, "Sending Method")
+
+    If methodChoice = vbCancel Then
+        MsgBox "Operation cancelled.", vbInformation, "Cancelled"
+        Exit Sub
+    End If
+
+    m_UseCDO = (methodChoice = vbNo)
+
+    ' If using CDO/SMTP, get server settings
+    If m_UseCDO Then
+        If Not GetSmtpSettings(headerRow) Then
+            Exit Sub
+        End If
+    End If
+
     ' Prompt for send mode
     sendMode = MsgBox("How would you like to send the emails?" & vbCrLf & vbCrLf & _
                       "YES = Preview each email before sending" & vbCrLf & _
@@ -106,7 +143,7 @@ Public Sub SendHealthScreeningInvites()
         Exit Sub
     End If
 
-    ' Create Outlook application (late binding for compatibility)
+    ' Create Outlook application (needed for preview mode or Outlook sending)
     Set outlookApp = CreateObject("Outlook.Application")
 
     ' Initialize counters
@@ -146,10 +183,18 @@ Public Sub SendHealthScreeningInvites()
         DoEvents
 
         ' Create and send email
-        If ProcessEmailRow(outlookApp, htmlTemplate, currentRow, headerRow, ws, rowCount, statusColIndex, sendMode) Then
-            sentCount = sentCount + 1
+        If m_UseCDO Then
+            If ProcessEmailRowCDO(htmlTemplate, currentRow, headerRow, ws, rowCount, statusColIndex, sendMode, outlookApp) Then
+                sentCount = sentCount + 1
+            Else
+                errorCount = errorCount + 1
+            End If
         Else
-            errorCount = errorCount + 1
+            If ProcessEmailRow(outlookApp, htmlTemplate, currentRow, headerRow, ws, rowCount, statusColIndex, sendMode) Then
+                sentCount = sentCount + 1
+            Else
+                errorCount = errorCount + 1
+            End If
         End If
 
         ' Add delay every 50 emails to avoid throttling
@@ -514,3 +559,210 @@ TestError:
     MsgBox "Error testing email setup:" & vbCrLf & _
            Err.Description, vbCritical, "Test Failed"
 End Sub
+
+'=============================================================================
+' Get SMTP settings from user or spreadsheet
+'=============================================================================
+Private Function GetSmtpSettings(headerRow As Range) As Boolean
+    Dim smtpColIndex As Integer
+    Dim fromColIndex As Integer
+
+    GetSmtpSettings = False
+
+    ' Check if SMTP server is in spreadsheet
+    smtpColIndex = GetColumnIndex(headerRow, "SmtpServer")
+    fromColIndex = GetColumnIndex(headerRow, "FromAddress")
+
+    ' Prompt for SMTP server
+    m_SmtpServer = InputBox("Enter your SMTP server address:" & vbCrLf & vbCrLf & _
+                            "Examples:" & vbCrLf & _
+                            "  - smtp.office365.com (Office 365)" & vbCrLf & _
+                            "  - smtp.yourcompany.com (Internal)" & vbCrLf & _
+                            "  - mail.yourcompany.com", _
+                            "SMTP Server", "smtp.office365.com")
+
+    If m_SmtpServer = "" Then
+        MsgBox "SMTP server is required for direct sending.", vbExclamation, "Cancelled"
+        Exit Function
+    End If
+
+    ' Prompt for port
+    Dim portStr As String
+    portStr = InputBox("Enter SMTP port:" & vbCrLf & vbCrLf & _
+                       "Common ports:" & vbCrLf & _
+                       "  - 25 (Internal/no encryption)" & vbCrLf & _
+                       "  - 587 (TLS - recommended)" & vbCrLf & _
+                       "  - 465 (SSL)", _
+                       "SMTP Port", "587")
+
+    If portStr = "" Then
+        MsgBox "SMTP port is required.", vbExclamation, "Cancelled"
+        Exit Function
+    End If
+    m_SmtpPort = CInt(portStr)
+
+    ' Prompt for From address
+    m_FromAddress = InputBox("Enter the FROM email address:" & vbCrLf & vbCrLf & _
+                             "This should be your shared mailbox or sending address.", _
+                             "From Address", "")
+
+    If m_FromAddress = "" Then
+        MsgBox "From address is required.", vbExclamation, "Cancelled"
+        Exit Function
+    End If
+
+    ' Ask about authentication
+    Dim authChoice As VbMsgBoxResult
+    authChoice = MsgBox("Does your SMTP server require authentication?" & vbCrLf & vbCrLf & _
+                        "YES = Enter username/password" & vbCrLf & _
+                        "NO = Anonymous/Windows auth", _
+                        vbYesNo + vbQuestion, "Authentication")
+
+    If authChoice = vbYes Then
+        m_SmtpUser = InputBox("Enter SMTP username (usually your email):", "SMTP Username", m_FromAddress)
+        If m_SmtpUser = "" Then
+            MsgBox "Username is required for authenticated SMTP.", vbExclamation, "Cancelled"
+            Exit Function
+        End If
+
+        m_SmtpPass = InputBox("Enter SMTP password:", "SMTP Password", "")
+        If m_SmtpPass = "" Then
+            MsgBox "Password is required for authenticated SMTP.", vbExclamation, "Cancelled"
+            Exit Function
+        End If
+    Else
+        m_SmtpUser = ""
+        m_SmtpPass = ""
+    End If
+
+    GetSmtpSettings = True
+End Function
+
+'=============================================================================
+' Process email row using CDO (SMTP direct)
+'=============================================================================
+Private Function ProcessEmailRowCDO(htmlTemplate As String, _
+                                     dataRow As Range, headerRow As Range, _
+                                     ws As Worksheet, rowNum As Long, _
+                                     statusColIndex As Integer, sendMode As VbMsgBoxResult, _
+                                     outlookApp As Object) As Boolean
+    Dim cdoMsg As Object
+    Dim cdoConfig As Object
+    Dim processedHTML As String
+    Dim toAddress As String
+    Dim subject As String
+    Dim ccAddress As String
+    Dim bccAddress As String
+    Dim stepName As String
+    Dim i As Integer
+    Dim attachPath As String
+
+    On Error GoTo RowError
+
+    ProcessEmailRowCDO = False
+    stepName = "Reading cell values"
+
+    ' Get email properties from row
+    toAddress = Trim(GetCellValue(dataRow, headerRow, "To"))
+    subject = Trim(GetCellValue(dataRow, headerRow, "Subject"))
+    ccAddress = Trim(GetCellValue(dataRow, headerRow, "CC"))
+    bccAddress = Trim(GetCellValue(dataRow, headerRow, "BCC"))
+
+    stepName = "Processing template"
+    processedHTML = ReplacePlaceholders(htmlTemplate, dataRow, headerRow)
+
+    ' If preview mode, use Outlook to display
+    If sendMode = vbYes Then
+        stepName = "Creating preview in Outlook"
+        Dim mail As Object
+        Set mail = outlookApp.CreateItem(olMailItem)
+        With mail
+            .BodyFormat = olFormatHTML
+            .To = toAddress
+            If ccAddress <> "" Then .CC = ccAddress
+            If bccAddress <> "" Then .BCC = bccAddress
+            .Subject = subject
+            .HTMLBody = processedHTML
+            .Display
+        End With
+        Set mail = Nothing
+        LogStatus ws, rowNum, statusColIndex, "Previewed: " & Format(Now, "yyyy-mm-dd hh:mm:ss")
+        ProcessEmailRowCDO = True
+        Exit Function
+    End If
+
+    stepName = "Creating CDO message"
+    Set cdoMsg = CreateObject("CDO.Message")
+    Set cdoConfig = CreateObject("CDO.Configuration")
+
+    stepName = "Configuring SMTP"
+    With cdoConfig.Fields
+        .Item("http://schemas.microsoft.com/cdo/configuration/sendusing") = cdoSendUsingPort
+        .Item("http://schemas.microsoft.com/cdo/configuration/smtpserver") = m_SmtpServer
+        .Item("http://schemas.microsoft.com/cdo/configuration/smtpserverport") = m_SmtpPort
+        .Item("http://schemas.microsoft.com/cdo/configuration/smtpconnectiontimeout") = 60
+
+        ' Set SSL/TLS based on port
+        If m_SmtpPort = 465 Then
+            .Item("http://schemas.microsoft.com/cdo/configuration/smtpusessl") = True
+        ElseIf m_SmtpPort = 587 Then
+            .Item("http://schemas.microsoft.com/cdo/configuration/smtpusessl") = True
+        End If
+
+        ' Set authentication if provided
+        If m_SmtpUser <> "" Then
+            .Item("http://schemas.microsoft.com/cdo/configuration/smtpauthenticate") = cdoBasic
+            .Item("http://schemas.microsoft.com/cdo/configuration/sendusername") = m_SmtpUser
+            .Item("http://schemas.microsoft.com/cdo/configuration/sendpassword") = m_SmtpPass
+        End If
+
+        .Update
+    End With
+
+    Set cdoMsg.Configuration = cdoConfig
+
+    stepName = "Setting message properties"
+    With cdoMsg
+        .From = m_FromAddress
+        .To = toAddress
+        If ccAddress <> "" Then .CC = ccAddress
+        If bccAddress <> "" Then .BCC = bccAddress
+        .Subject = subject
+        .HTMLBody = processedHTML
+
+        stepName = "Adding attachments"
+        ' Add attachments
+        For i = 1 To 10
+            attachPath = Trim(GetCellValue(dataRow, headerRow, "Attachment" & i))
+            If attachPath <> "" Then
+                If Dir(attachPath) <> "" Then
+                    .AddAttachment attachPath
+                End If
+            End If
+        Next i
+
+        ' Also check single Attachment column
+        attachPath = Trim(GetCellValue(dataRow, headerRow, "Attachment"))
+        If attachPath <> "" Then
+            If Dir(attachPath) <> "" Then
+                .AddAttachment attachPath
+            End If
+        End If
+
+        stepName = "Sending via SMTP"
+        .Send
+    End With
+
+    Set cdoMsg = Nothing
+    Set cdoConfig = Nothing
+
+    LogStatus ws, rowNum, statusColIndex, "Sent (SMTP): " & Format(Now, "yyyy-mm-dd hh:mm:ss")
+    ProcessEmailRowCDO = True
+    Exit Function
+
+RowError:
+    LogStatus ws, rowNum, statusColIndex, "Error at [" & stepName & "]: " & Err.Description
+    Set cdoMsg = Nothing
+    Set cdoConfig = Nothing
+    ProcessEmailRowCDO = False
+End Function
