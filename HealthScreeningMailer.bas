@@ -175,11 +175,14 @@ NextRow:
     Exit Sub
 
 ErrorHandler:
+    Dim errMsg As String
+    errMsg = "Error: " & Err.Description & vbCrLf & _
+             "Error number: " & Err.Number & vbCrLf & _
+             "Processing row: " & rowCount
     Application.StatusBar = False
     Application.ScreenUpdating = True
     Set outlookApp = Nothing
-    MsgBox "An error occurred: " & Err.Description & vbCrLf & _
-           "Error number: " & Err.Number, vbCritical, "Error"
+    MsgBox errMsg, vbCritical, "Error"
 End Sub
 
 '=============================================================================
@@ -199,10 +202,12 @@ Private Function ProcessEmailRow(outlookApp As Object, htmlTemplate As String, _
     Dim importance As String
     Dim i As Integer
     Dim attachPath As String
+    Dim stepName As String
 
     On Error GoTo RowError
 
     ProcessEmailRow = False
+    stepName = "Reading cell values"
 
     ' Get email properties from row
     toAddress = Trim(GetCellValue(dataRow, headerRow, "To"))
@@ -212,12 +217,15 @@ Private Function ProcessEmailRow(outlookApp As Object, htmlTemplate As String, _
     sendAsAddress = Trim(GetCellValue(dataRow, headerRow, "SendAs"))
     importance = Trim(GetCellValue(dataRow, headerRow, "Importance"))
 
+    stepName = "Processing template"
     ' Process HTML template with placeholders
     processedHTML = ReplacePlaceholders(htmlTemplate, dataRow, headerRow)
 
+    stepName = "Creating mail item"
     ' Create mail item
     Set mail = outlookApp.CreateItem(olMailItem)
 
+    stepName = "Setting mail properties"
     With mail
         ' Set body format first (important for HTMLBody to work correctly)
         .BodyFormat = olFormatHTML
@@ -243,20 +251,19 @@ Private Function ProcessEmailRow(outlookApp As Object, htmlTemplate As String, _
                 .importance = olImportanceNormal
         End Select
 
+        stepName = "Setting shared mailbox"
         ' Set shared mailbox if specified
         If sendAsAddress <> "" Then
             SetSharedMailbox mail, outlookApp, sendAsAddress
         End If
 
+        stepName = "Adding attachments"
         ' Add attachments
         For i = 1 To 10  ' Support up to 10 attachments
             attachPath = Trim(GetCellValue(dataRow, headerRow, "Attachment" & i))
             If attachPath <> "" Then
                 If Dir(attachPath) <> "" Then
                     .Attachments.Add attachPath
-                Else
-                    ' Log warning but continue
-                    Debug.Print "Warning: Attachment not found - " & attachPath
                 End If
             End If
         Next i
@@ -269,6 +276,7 @@ Private Function ProcessEmailRow(outlookApp As Object, htmlTemplate As String, _
             End If
         End If
 
+        stepName = "Sending/displaying email"
         ' Send or display based on mode
         If sendMode = vbYes Then
             .Display
@@ -284,7 +292,7 @@ Private Function ProcessEmailRow(outlookApp As Object, htmlTemplate As String, _
     Exit Function
 
 RowError:
-    LogStatus ws, rowNum, statusColIndex, "Error: " & Err.Description
+    LogStatus ws, rowNum, statusColIndex, "Error at [" & stepName & "]: " & Err.Description
     Set mail = Nothing
     ProcessEmailRow = False
 End Function
@@ -295,7 +303,7 @@ End Function
 Private Function LoadHTMLTemplate(filePath As String) As String
     Dim fileNum As Integer
     Dim content As String
-    Dim line As String
+    Dim textLine As String
 
     On Error GoTo FileError
 
@@ -311,8 +319,8 @@ Private Function LoadHTMLTemplate(filePath As String) As String
 
     Open filePath For Input As #fileNum
     Do While Not EOF(fileNum)
-        Line Input #fileNum, line
-        content = content & line & vbCrLf
+        Line Input #fileNum, textLine
+        content = content & textLine & vbCrLf
     Loop
     Close #fileNum
 
