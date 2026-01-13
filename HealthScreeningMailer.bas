@@ -293,27 +293,36 @@ End Function
 ' Load HTML template from file
 '=============================================================================
 Private Function LoadHTMLTemplate(filePath As String) As String
-    Dim stream As Object
+    Dim fileNum As Integer
     Dim content As String
+    Dim line As String
 
     On Error GoTo FileError
 
-    ' Use ADODB.Stream for proper UTF-8 encoding support
-    Set stream = CreateObject("ADODB.Stream")
-    With stream
-        .Charset = "utf-8"
-        .Open
-        .LoadFromFile filePath
-        content = .ReadText
-        .Close
-    End With
+    ' Check if file exists
+    If Dir(filePath) = "" Then
+        LoadHTMLTemplate = ""
+        Exit Function
+    End If
 
-    Set stream = Nothing
+    ' Use native VBA file reading (more compatible)
+    fileNum = FreeFile
+    content = ""
+
+    Open filePath For Input As #fileNum
+    Do While Not EOF(fileNum)
+        Line Input #fileNum, line
+        content = content & line & vbCrLf
+    Loop
+    Close #fileNum
+
     LoadHTMLTemplate = content
     Exit Function
 
 FileError:
-    Set stream = Nothing
+    On Error Resume Next
+    Close #fileNum
+    On Error GoTo 0
     LoadHTMLTemplate = ""
 End Function
 
